@@ -20,11 +20,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 4. SET UP PYTHON: Installs Python 3.10 and caches packages for speed
+      # 4. SET UP PYTHON: Installs Python 3.11 and caches packages for speed
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
           cache: 'pip'
 
       - name: Install Dependencies
