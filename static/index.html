@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Workload Router Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --primary: #4f46e5;
+            --text: #1f2937;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h2 { margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.95rem; }
+        input[type="range"], select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
+        }
+        .value-display { font-weight: normal; color: #6b7280; float: right; }
+        .result-box {
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 20px;
+        }
+        .result-value { font-size: 1.8rem; font-weight: 700; color: var(--primary); margin-top: 5px; }
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: #e0e7ff;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>System Simulation Inputs</h2>
+        
+        <div class="form-group">
+            <label>Context Tokens (Input Size) <span id="context-val" class="value-display">500</span></label>
+            <input type="range" id="context" min="10" max="8000" value="500" oninput="updatePredict()">
+        </div>
+
+        <div class="form-group">
+            <label>Hour of Day <span id="hour-val" class="value-display">14:00</span></label>
+            <input type="range" id="hour" min="0" max="23" value="14" oninput="updatePredict()">
+        </div>
+
+        <div class="form-group">
+            <label>Workload Type</label>
+            <select id="workload" onchange="updatePredict()">
+                <option value="0">Conversation / Chat</option>
+                <option value="1">Code / Autocomplete</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <h2>Router Allocation Decisions</h2>
+            <div class="result-box">
+                <div>Estimated Output Size:</div>
+                <div id="pred-tokens" class="result-value">--- tokens</div>
+            </div>
+            <div class="result-box">
+                <div>Target Infrastructure Cluster:</div>
+                <div id="routing-decision" class="result-value" style="font-size: 1.3rem;">---</div>
+            </div>
+        </div>
+        <div>
+            <span class="badge">Model Status: Active</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updatePredict() {
+        const context = document.getElementById('context').value;
+        const hour = document.getElementById('hour').value;
+        const workload = document.getElementById('workload').value;
+
+        document.getElementById('context-val').innerText = context;
+        document.getElementById('hour-val').innerText = `${hour.padStart(2, '0')}:00`;
+
+        fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ContextTokens: parseInt(context),
+                WorkloadType: parseInt(workload),
+                Hour: parseInt(hour)
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('pred-tokens').innerText = `${data.predicted_generated_tokens} tokens`;
+            document.getElementById('routing-decision').innerText = data.recommended_routing;
+        })
+        .catch(err => console.error('Error fetching prediction:', err));
+    }
+    // Run once on load
+    window.onload = updatePredict;
+</script>
+</body>
+</html>
