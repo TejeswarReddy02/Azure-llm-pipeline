@@ -24,7 +24,7 @@ jobs:
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.11'   #  Now the server will actually use 3.11
           cache: 'pip'
 
       - name: Install Dependencies
@@ -47,3 +47,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: live-routing-model
+          path: models/   #  Tells GitHub exactly which folder to zip and save
